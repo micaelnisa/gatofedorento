@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gato Fedorento TV</title>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Comic Sans MS', cursive;
+        }
+
+        .container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background-color: transparent;
+            position: relative;
+            z-index: 1;
+        }
+        
+        
+        .welcome-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgb(244, 234, 222);
+            /*background-image: url('images/08609df613d3104a6b04a65d6738d8fa-754x394.jpg');*/
+            background-size: cover;
+            background-position: center;
+            filter: brightness(1); /* Slight darkening for better text visibility */
+            z-index: -1;
+        }
+
+        .logo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .logo img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .description {
+            max-width: 600px;
+            margin-bottom: 30px;
+            padding: 0 20px;
+            padding: 20px;
+            border-radius: 10px;
+            color: rgb(0, 0, 0);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background-color: #000000;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #777f78;
+        }
+
+        .player-container {
+            display: none;
+            height: 100%;
+            width: 100%;
+            background-color: #000;
+            position: relative;
+            justify-content: center;
+            align-items: center;
+        }
+
+        video {
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 10px 0;
+        }
+
+        .control-btn {
+            font-family: 'Comic Sans MS', cursive;
+            padding: 7px 25px;
+            background-color: rgb(0, 0, 0);
+            color: white;
+            border: 2px solid white;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            margin-top: 5px;
+        }
+
+        .control-btn:hover {
+            background-color: white;
+            color: black;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Página de Boas-vindas -->
+    <div id="welcome" class="container">
+        <div class="welcome-bg"></div>
+        <div class="logo">
+            <img src="images/Logo_Gato_Fedorento.png" alt="Logo Gato Fedorento">
+        </div>
+        <div class="description">
+            <h1>Bem-vindo ao Gato Fedorento TV</h1>
+            <p>Um website criado por fãs, que permite ao utilizador percorrer de modo aleatório a obra dos Gato
+                Fedorento.</p>
+        </div>
+        <button id="startBtn" class="control-btn">Começar</button>
+    </div>
+
+    <!-- Página do Player -->
+    <div id="player" class="player-container">
+        <video id="videoPlayer" autoplay></video>
+        <div class="controls">
+            <button id="pauseBtn" class="control-btn">Pausa</button>
+            <button id="skipBtn" class="control-btn">Próximo</button>
+        </div>
+    </div>
+
+    <script>
+        // Diretório dos vídeos
+        const videoDir = 'videos/';
+
+        // Extensões de vídeo suportadas
+        const videoExtensions = ['.mp4', '.webm', '.ogg'];
+
+        // Armazenar a lista de vídeos disponíveis
+        let availableVideos = [];
+        let currentVideo = '';
+        let lastRandomIndex = -1;
+
+        // Elementos do DOM
+        const videoPlayer = document.getElementById('videoPlayer');
+        const welcomePage = document.getElementById('welcome');
+        const playerPage = document.getElementById('player');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const skipBtn = document.getElementById('skipBtn');
+
+        // Função para carregar a lista de vídeos disponíveis
+        async function loadVideoList() {
+            try {
+                // Usando fetch para buscar a lista de arquivos do diretório
+                // Nota: Isto requer que o servidor retorne uma lista de arquivos
+                const response = await fetch(videoDir);
+                const data = await response.text();
+
+                // Criar um parser de DOM temporário para extrair os links
+                const parser = new DOMParser();
+                const htmlDoc = parser.parseFromString(data, 'text/html');
+                const links = htmlDoc.querySelectorAll('a');
+
+                // Filtrar apenas os arquivos de vídeo
+                availableVideos = Array.from(links)
+                    .map(link => link.href)
+                    .filter(href => {
+                        const lowerHref = href.toLowerCase();
+                        return videoExtensions.some(ext => lowerHref.endsWith(ext));
+                    })
+                    .map(href => {
+                        // Extrair apenas o nome do arquivo do URL completo
+                        const url = new URL(href);
+                        return url.pathname.split('/').pop();
+                    });
+
+                console.log('Vídeos disponíveis:', availableVideos);
+
+                // Se não encontrar vídeos, use alguns vídeos de exemplo
+             
+
+                // Embaralhar a lista de vídeos inicialmente para garantir aleatoriedade
+                shuffleArray(availableVideos);
+
+            } catch (error) {
+                
+                // Embaralhar a lista de vídeos inicialmente
+                shuffleArray(availableVideos);
+            }
+        }
+
+        // Função para embaralhar um array (algoritmo Fisher-Yates)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Função para obter um vídeo aleatório
+        function getRandomVideo() {
+            if (availableVideos.length === 0) return '';
+
+            let randomIndex;
+            do {
+                randomIndex = Math.floor(Math.random() * availableVideos.length);
+            } while (randomIndex === lastRandomIndex && availableVideos.length > 1);
+
+            lastRandomIndex = randomIndex;
+            currentVideo = availableVideos[randomIndex];
+            return videoDir + currentVideo;
+        }
+
+        // Função para carregar e reproduzir um vídeo aleatório
+        function playRandomVideo() {
+            const videoPath = getRandomVideo();
+            if (!videoPath) return;
+
+            videoPlayer.src = videoPath;
+            videoPlayer.play();
+        }
+
+        // Evento para passar para o próximo vídeo quando um termina
+        videoPlayer.addEventListener('ended', playRandomVideo);
+
+        // Botão de início
+        startBtn.addEventListener('click', async function () {
+            welcomePage.style.display = 'none';
+            playerPage.style.display = 'flex';
+
+            // Carregar a lista de vídeos se ainda não foi carregada
+            if (availableVideos.length === 0) {
+                await loadVideoList();
+            }
+
+            playRandomVideo();
+        });
+
+        // Botão de pausa/play
+        let isPlaying = true;
+        pauseBtn.addEventListener('click', function () {
+            if (isPlaying) {
+                videoPlayer.pause();
+                pauseBtn.textContent = 'Reproduzir';
+            } else {
+                videoPlayer.play();
+                pauseBtn.textContent = 'Pausa';
+            }
+            isPlaying = !isPlaying;
+        });
+
+        // Botão de próximo vídeo
+        skipBtn.addEventListener('click', playRandomVideo);
+
+        // Pré-carregar a lista de vídeos quando a página carregar
+        window.addEventListener('load', loadVideoList);
+    </script>
+</body>
+
+</html>
